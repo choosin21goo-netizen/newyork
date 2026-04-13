@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iPhone Snap NYC — Archive</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9f9f7; color: #1a1a1a; }
+
+  .top-bar { background: #fff; border-bottom: 0.5px solid rgba(0,0,0,0.1); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  .top-bar h1 { font-size: 16px; font-weight: 500; letter-spacing: -0.3px; }
+  .top-bar .meta { font-size: 12px; color: #888; }
+
+  .container { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+  .filter-row { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .filter-btn { font-size: 12px; padding: 5px 14px; border-radius: 20px; border: 0.5px solid rgba(0,0,0,0.15); background: #fff; color: #555; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .filter-btn:hover { border-color: rgba(0,0,0,0.3); }
+  .filter-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+  .upload-zone { border: 0.5px dashed rgba(0,0,0,0.2); border-radius: 12px; padding: 2rem; text-align: center; margin-bottom: 1.5rem; cursor: pointer; transition: background 0.15s; background: #fff; }
+  .upload-zone:hover { background: #f5f5f3; }
+  .upload-icon { width: 36px; height: 36px; margin: 0 auto 10px; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .upload-icon svg { width: 16px; height: 16px; stroke: #888; fill: none; stroke-width: 1.5; }
+  .upload-zone p { font-size: 13px; color: #888; margin-top: 4px; }
+  input[type=file] { display: none; }
+
+  .session-select { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: none; }
+  .session-select p { font-size: 13px; color: #555; margin-bottom: 10px; }
+  .session-select .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .session-btn { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 0.5px solid rgba(0,0,0,0.15); background: #fff; color: #333; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .session-btn:hover { background: #f5f5f3; }
+
+  .feed { columns: 2; gap: 10px; }
+  @media (max-width: 480px) { .feed { columns: 1; } }
+
+  .feed-item { break-inside: avoid; margin-bottom: 10px; border-radius: 10px; overflow: hidden; border: 0.5px solid rgba(0,0,0,0.08); background: #fff; }
+  .feed-item img { width: 100%; display: block; object-fit: cover; }
+  .feed-item-info { padding: 10px 12px 12px; }
+  .feed-item-info .session-tag { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #f0f0ee; color: #666; margin-bottom: 6px; }
+  .feed-item-info .caption { font-size: 13px; color: #1a1a1a; line-height: 1.5; }
+  .feed-item-info .location { font-size: 11px; color: #aaa; margin-top: 5px; }
+
+  .empty { text-align: center; padding: 4rem 0; color: #bbb; font-size: 13px; }
+  .empty svg { width: 32px; height: 32px; stroke: #ddd; fill: none; stroke-width: 1; margin: 0 auto 12px; display: block; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.5rem; }
+  .stat-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 12px; text-align: center; }
+  .stat-card .num { font-size: 22px; font-weight: 500; color: #1a1a1a; }
+  .stat-card .label { font-size: 11px; color: #aaa; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>iPhone Snap NYC</h1>
+  <div class="meta" id="top-meta">사진 0장</div>
+</div>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="s-total">0</div><div class="label">총 사진</div></div>
+    <div class="stat-card"><div class="num" id="s-s1">0</div><div class="label">1회차</div></div>
+    <div class="stat-card"><div class="num" id="s-s2">0</div><div class="label">2회차</div></div>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="filterFeed('all', this)">전체</button>
+    <button class="filter-btn" onclick="filterFeed('1', this)">1회차 · 센트럴파크</button>
+    <button class="filter-btn" onclick="filterFeed('2', this)">2회차 · 차이나타운</button>
+  </div>
+
+  <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+    </div>
+    <p style="font-size:14px;color:#555;font-weight:500;">사진 업로드</p>
+    <p>클릭해서 파일을 선택하세요</p>
+    <p style="font-size:11px;margin-top:4px;color:#bbb;">JPG · PNG · HEIC · 여러 장 동시 가능</p>
+    <input type="file" id="fileInput" multiple accept="image/*" onchange="handleUpload(event)">
+  </div>
+
+  <div class="session-select" id="session-select">
+    <p>업로드한 사진을 어느 회차에 추가할까요?</p>
+    <div class="btns">
+      <button class="session-btn" onclick="assignSession(1)">1회차 · 센트럴파크</button>
+      <button class="session-btn" onclick="assignSession(2)">2회차 · 차이나타운 & 리틀 이탈리</button>
+    </div>
+  </div>
+
+  <div class="feed" id="feed">
+    <div class="empty" style="column-span:all;" id="empty-msg">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      아직 사진이 없어요.<br>위에서 업로드해보세요!
+    </div>
+  </div>
+
+</div>
+
+<script>
+const photos = [];
+let pendingPhotos = [];
+let currentFilter = 'all';
+
+const sessionInfo = {
+  1: { name: '1회차', location: 'Central Park, NYC' },
+  2: { name: '2회차', location: 'Chinatown & Little Italy, NYC' }
+};
+
+function handleUpload(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  pendingPhotos = [];
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      pendingPhotos.push({ src: ev.target.result, name: file.name.replace(/\.[^.]+$/, '') });
+      loaded++;
+      if (loaded === files.length) {
+        document.getElementById('session-select').style.display = 'block';
+        document.getElementById('session-select').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+}
+
+function assignSession(session) {
+  pendingPhotos.forEach(p => {
+    photos.push({ ...p, session, id: Date.now() + Math.random() });
+  });
+  pendingPhotos = [];
+  document.getElementById('session-select').style.display = 'none';
+  renderFeed();
+  updateStats();
+}
+
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  const filtered = currentFilter === 'all' ? photos : photos.filter(p => String(p.session) === currentFilter);
+  feed.innerHTML = '';
+  if (!filtered.length) {
+    feed.innerHTML = '<div class="empty" style="column-span:all;" id="empty-msg"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>사진이 없어요</div>';
+    return;
+  }
+  filtered.slice().reverse().forEach(p => {
+    const info = sessionInfo[p.session];
+    const div = document.createElement('div');
+    div.className = 'feed-item';
+    div.innerHTML = `<img src="${p.src}" loading="lazy"><div class="feed-item-info"><span class="session-tag">${info.name}</span><div class="caption">${p.name}</div><div class="location">${info.location}</div></div>`;
+    feed.appendChild(div);
+  });
+}
+
+function filterFeed(val, btn) {
+  currentFilter = val;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFeed();
+}
+
+function updateStats() {
+  const total = photos.length;
+  const s1 = photos.filter(p => p.session === 1).length;
+  const s2 = photos.filter(p => p.session === 2).length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-s1').textContent = s1;
+  document.getElementById('s-s2').textContent = s2;
+  document.getElementById('top-meta').textContent = `사진 ${total}장`;
+}
+</script>
+</body>
+</html>
