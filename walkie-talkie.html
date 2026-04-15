@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>픽셀 무전기 🎙️</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  :root {
+    --bg: #1a0a2e;
+    --dark: #0d0519;
+    --mid: #2d1b4e;
+    --light: #4a2c7a;
+    --cyan: #00ffff;
+    --pink: #ff00aa;
+    --yellow: #ffee00;
+    --green: #39ff14;
+    --text: #e8d5ff;
+    --wb: #2a3f5f;
+    --wd: #182840;
+    --wl: #3d5a8a;
+    --sbg: #001a00;
+    --stxt: #00ff41;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Press Start 2P', monospace;
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+    pointer-events:none; z-index:9999;
+  }
+
+  .page { max-width:680px; margin:0 auto; padding:40px 20px; position:relative; z-index:1; }
+
+  .title { text-align:center; margin-bottom:30px; }
+  .title h1 { font-size:clamp(11px,3vw,18px); color:var(--cyan); text-shadow:0 0 10px var(--cyan),0 0 20px var(--cyan); letter-spacing:3px; animation:flicker 4s infinite; }
+  .title p { font-size:6px; color:var(--pink); margin-top:10px; letter-spacing:2px; text-shadow:0 0 8px var(--pink); }
+  @keyframes flicker { 0%,94%,100%{opacity:1} 95%{opacity:.3} 96%{opacity:1} 97%{opacity:.1} 98%{opacity:1} }
+
+  .divider { display:flex; justify-content:center; gap:5px; margin:20px 0; }
+  .divider span { width:8px; height:8px; display:inline-block; }
+  .dc{background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+  .dp{background:var(--pink);box-shadow:0 0 6px var(--pink);}
+  .dy{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+  .dg{background:var(--green);box-shadow:0 0 6px var(--green);}
+
+  .slabel { font-size:8px; color:var(--yellow); text-shadow:0 0 8px var(--yellow); text-align:center; margin-bottom:16px; letter-spacing:3px; }
+
+  /* CHARACTER SELECT */
+  .char-select { display:flex; justify-content:center; gap:14px; margin-bottom:24px; flex-wrap:wrap; }
+  .char-btn {
+    width:96px; height:106px;
+    border:3px solid #3d3d5c;
+    background:var(--mid);
+    cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    clip-path:polygon(6px 0%,calc(100% - 6px) 0%,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0% calc(100% - 6px),0% 6px);
+    transition:transform .1s, border-color .1s, box-shadow .1s;
+    position:relative;
+  }
+  .char-btn:hover { border-color:var(--cyan); box-shadow:0 0 14px var(--cyan); transform:translateY(-4px); }
+  .char-btn.selected { border-color:var(--yellow); background:#3d2a5e; box-shadow:0 0 22px var(--yellow), inset 0 0 20px rgba(255,238,0,.1); }
+  .char-btn .emoji { font-size:34px; }
+  .char-btn .clabel { font-size:6px; color:var(--text); }
+  .char-btn.selected .clabel { color:var(--yellow); text-shadow:0 0 6px var(--yellow); }
+  .star { position:absolute; top:-8px; right:-8px; font-size:13px; display:none; animation:spin 2s linear infinite; }
+  .char-btn.selected .star { display:block; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* CHAR DISPLAY */
+  .char-display-wrap {
+    border:3px solid var(--cyan);
+    box-shadow:0 0 20px var(--cyan), inset 0 0 30px rgba(0,255,255,.04);
+    padding:22px 30px;
+    background:var(--dark);
+    clip-path:polygon(10px 0%,calc(100% - 10px) 0%,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0% calc(100% - 10px),0% 10px);
+    text-align:center;
+    position:relative;
+    min-height:130px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  }
+  .char-display-wrap::before {
+    content:'◆ PLAYER ◆';
+    position:absolute; top:-11px; left:50%; transform:translateX(-50%);
+    background:var(--dark); padding:0 8px;
+    font-size:6px; color:var(--cyan); white-space:nowrap;
+  }
+  #charBig { font-size:72px; animation:bob 1.6s ease-in-out infinite; display:block; filter:drop-shadow(0 0 16px rgba(0,255,255,.3)); }
+  @keyframes bob { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-10px) scale(1.06)} }
+  #charName { font-size:10px; color:var(--cyan); text-shadow:0 0 10px var(--cyan); letter-spacing:4px; }
+
+  /* EFFECT */
+  .effect-wrap { text-align:center; margin-top:24px; }
+  .effect-row { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
+  .eff-btn {
+    padding:10px 18px;
+    border:3px solid #3d3d5c;
+    background:var(--mid);
+    color:var(--text);
+    font-family:'Press Start 2P',monospace;
+    font-size:7px;
+    cursor:pointer;
+    clip-path:polygon(4px 0%,calc(100% - 4px) 0%,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0% calc(100% - 4px),0% 4px);
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    min-width:90px; transition:all .1s;
+  }
+  .eff-btn:hover { border-color:var(--pink); box-shadow:0 0 12px var(--pink); transform:translateY(-2px); }
+  .eff-btn.on { border-color:var(--green); background:#102010; box-shadow:0 0 16px var(--green), inset 0 0 16px rgba(57,255,20,.08); color:var(--green); text-shadow:0 0 8px var(--green); }
+  .eff-btn .eico { font-size:20px; }
+  .eff-btn .edesc { font-size:5px; color:#888; }
+  .eff-btn.on .edesc { color:var(--green); }
+
+  /* WALKIE */
+  .walkie-wrap { display:flex; justify-content:center; margin:30px 0; }
+  .walkie { width:210px; position:relative; }
+
+  .antenna {
+    width:9px; height:65px;
+    background:linear-gradient(to bottom,#bbb 0%,#666 50%,var(--wd) 100%);
+    margin:0 auto; position:relative; left:44px;
+    clip-path:polygon(25% 0%,75% 0%,85% 100%,15% 100%);
+  }
+  .antenna::after {
+    content:''; width:13px; height:13px;
+    background:#bbb; border-radius:50%;
+    position:absolute; top:-6px; left:-2px;
+    box-shadow:0 0 5px rgba(255,255,255,.3);
+  }
+
+  .wbody {
+    background:linear-gradient(135deg,var(--wl) 0%,var(--wb) 45%,var(--wd) 100%);
+    border-radius:14px 14px 28px 28px;
+    padding:14px 18px 28px;
+    border:3px solid #0a1a30;
+    box-shadow:4px 4px 0 #08101e,8px 8px 0 rgba(0,0,0,.25),inset 2px 2px 0 rgba(255,255,255,.08),inset -2px -2px 0 rgba(0,0,0,.2);
+    position:relative;
+  }
+  .wbody::before,.wbody::after{content:'✦';position:absolute;font-size:7px;color:#666;}
+  .wbody::before{top:8px;left:10px;} .wbody::after{top:8px;right:10px;}
+
+  .side-btn {
+    position:absolute; right:-12px; top:50%; transform:translateY(-50%);
+    width:12px; height:46px;
+    background:linear-gradient(to right,var(--wd),#2a3f5f);
+    border:2px solid #0a1525; border-left:none;
+    border-radius:0 4px 4px 0;
+  }
+
+  .wscreen {
+    background:var(--sbg);
+    border:3px solid #0a2a0a;
+    border-radius:4px; padding:10px 8px; margin-bottom:12px;
+    box-shadow:inset 0 0 10px rgba(0,0,0,.8),0 0 5px rgba(0,255,65,.2);
+    min-height:78px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    overflow:hidden;
+  }
+  .sline { font-size:5px; color:var(--stxt); text-shadow:0 0 6px var(--stxt); white-space:nowrap; }
+  .sline.big { font-size:7px; }
+  .sline.blink { animation:blink .9s infinite; }
+  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+  .waveform { display:flex; align-items:center; gap:2px; height:22px; }
+  .wbar { width:4px; background:var(--green); box-shadow:0 0 4px var(--green); border-radius:1px; animation:idle .9s ease-in-out infinite; }
+  .wbar:nth-child(1){height:5px;animation-delay:0s}
+  .wbar:nth-child(2){height:11px;animation-delay:.1s}
+  .wbar:nth-child(3){height:17px;animation-delay:.2s}
+  .wbar:nth-child(4){height:9px;animation-delay:.3s}
+  .wbar:nth-child(5){height:19px;animation-delay:.15s}
+  .wbar:nth-child(6){height:7px;animation-delay:.25s}
+  .wbar:nth-child(7){height:13px;animation-delay:.05s}
+  .wbar:nth-child(8){height:5px;animation-delay:.35s}
+  @keyframes idle { 0%,100%{transform:scaleY(.35);opacity:.4} 50%{transform:scaleY(1);opacity:1} }
+  .wbar.active { animation:lively .13s ease-in-out infinite !important; }
+  .wbar.active:nth-child(1){animation-delay:0s!important}
+  .wbar.active:nth-child(2){animation-delay:.04s!important}
+  .wbar.active:nth-child(3){animation-delay:.08s!important}
+  .wbar.active:nth-child(4){animation-delay:.06s!important}
+  .wbar.active:nth-child(5){animation-delay:.02s!important}
+  .wbar.active:nth-child(6){animation-delay:.1s!important}
+  .wbar.active:nth-child(7){animation-delay:.07s!important}
+  .wbar.active:nth-child(8){animation-delay:.03s!important}
+  @keyframes lively { 0%,100%{transform:scaleY(.2)} 50%{transform:scaleY(1)} }
+
+  .grill { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; padding:6px; background:var(--wd); border-radius:5px; border:2px solid #0a1525; margin-bottom:12px; }
+  .gdot { width:4px; height:4px; background:#1a2a3a; border-radius:50%; }
+
+  .knobs { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:0 4px; }
+  .knob-wrap { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .knob {
+    width:26px; height:26px;
+    background:radial-gradient(circle at 35% 35%,#999,#2a2a2a);
+    border-radius:50%; border:2px solid #0a1525;
+    box-shadow:2px 2px 4px rgba(0,0,0,.5);
+    cursor:pointer; position:relative; transition:transform .1s;
+  }
+  .knob:hover { transform:scale(1.12); }
+  .knob::after { content:''; width:2px; height:7px; background:#ddd; position:absolute; top:3px; left:50%; transform:translateX(-50%); border-radius:1px; }
+  .klabel { font-size:4px; color:#999; letter-spacing:1px; }
+  .led { width:10px; height:10px; border-radius:50%; background:#3a0000; border:2px solid #1a0000; }
+  .led.on { background:var(--pink); box-shadow:0 0 10px var(--pink),0 0 20px var(--pink); animation:ledp .4s infinite; }
+  @keyframes ledp { 0%,100%{box-shadow:0 0 10px var(--pink),0 0 20px var(--pink)} 50%{box-shadow:0 0 20px var(--pink),0 0 40px var(--pink)} }
+
+  .ptt {
+    width:100%; height:58px;
+    background:linear-gradient(to bottom,#ff7070 0%,#c84040 60%,#8a2020 100%);
+    border:none; border-radius:8px;
+    font-family:'Press Start 2P',monospace; font-size:8px; color:#fff;
+    text-shadow:0 2px 0 rgba(0,0,0,.4);
+    cursor:pointer;
+    box-shadow:0 4px 0 #5a1010,0 6px 0 rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.15);
+    transition:all .05s;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    letter-spacing:1px;
+  }
+  .ptt:hover { box-shadow:0 4px 0 #5a1010,0 6px 0 rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.15),0 0 18px rgba(255,80,80,.5); }
+  .ptt.rec {
+    transform:translateY(4px);
+    box-shadow:0 0 30px rgba(255,0,0,.7);
+    background:linear-gradient(to bottom,#ff3333 0%,#aa0000 100%);
+    animation:rpulse .5s infinite;
+  }
+  @keyframes rpulse { 0%,100%{box-shadow:0 0 20px rgba(255,0,0,.7)} 50%{box-shadow:0 0 40px rgba(255,0,0,.9)} }
+  .ptt .pico { font-size:15px; }
+
+  .timer { font-size:7px; color:var(--green); text-shadow:0 0 8px var(--green); text-align:center; margin-top:7px; min-height:12px; }
+
+  /* RECORDINGS */
+  .rec-section { margin-top:28px; }
+  .rec-list { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+  .rec-item {
+    background:var(--mid); border:2px solid #3d3d5c;
+    padding:11px 14px;
+    display:flex; align-items:center; gap:11px;
+    clip-path:polygon(4px 0%,calc(100% - 4px) 0%,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0% calc(100% - 4px),0% 4px);
+    animation:slidein .3s ease;
+  }
+  @keyframes slidein { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+  .rec-char { font-size:22px; }
+  .rec-info { flex:1; }
+  .rec-title { font-size:6px; color:var(--cyan); margin-bottom:4px; }
+  .rec-meta { font-size:5px; color:#888; }
+  .pbtn {
+    width:32px; height:32px;
+    background:transparent; border:2px solid var(--green); color:var(--green);
+    font-size:12px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    clip-path:polygon(4px 0%,calc(100% - 4px) 0%,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0% calc(100% - 4px),0% 4px);
+    transition:all .1s;
+  }
+  .pbtn:hover { background:#102010; box-shadow:0 0 10px var(--green); }
+  .dbtn {
+    width:32px; height:32px;
+    background:transparent; border:2px solid #c84040; color:#c84040;
+    font-size:12px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    clip-path:polygon(4px 0%,calc(100% - 4px) 0%,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0% calc(100% - 4px),0% 4px);
+    transition:all .1s;
+  }
+  .dbtn:hover { border-color:#ff6060; box-shadow:0 0 10px rgba(255,96,96,.5); }
+  .norec { text-align:center; font-size:7px; color:#555; padding:24px; border:2px dashed #333; letter-spacing:1px; line-height:2.2; }
+
+  .footer { text-align:center; margin-top:50px; padding-top:18px; border-top:2px solid #2d1b4e; }
+  .footer p { font-size:5px; color:#444; letter-spacing:2px; }
+
+  .toast {
+    position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(16px);
+    background:var(--mid); border:2px solid var(--cyan); color:var(--cyan);
+    font-size:7px; padding:11px 20px;
+    box-shadow:0 0 18px var(--cyan);
+    opacity:0; transition:all .3s; z-index:10000; white-space:nowrap;
+    clip-path:polygon(4px 0%,calc(100% - 4px) 0%,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0% calc(100% - 4px),0% 4px);
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  ::-webkit-scrollbar{width:8px}
+  ::-webkit-scrollbar-track{background:var(--dark)}
+  ::-webkit-scrollbar-thumb{background:var(--light)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="title">
+    <h1>📻 픽셀 무전기</h1>
+    <p>PIXEL WALKIE TALKIE v1.0</p>
+  </div>
+
+  <div class="divider">
+    <span class="dc"></span><span class="dp"></span><span class="dy"></span>
+    <span class="dg"></span><span class="dy"></span><span class="dp"></span><span class="dc"></span>
+  </div>
+
+  <p class="slabel">▶ 캐릭터를 선택하세요 ◀</p>
+  <div class="char-select">
+    <div class="char-btn" data-char="cat" onclick="selectChar(this)">
+      <span class="star">⭐</span>
+      <span class="emoji">🐱</span>
+      <span class="clabel">고양이</span>
+    </div>
+    <div class="char-btn" data-char="dog" onclick="selectChar(this)">
+      <span class="star">⭐</span>
+      <span class="emoji">🐶</span>
+      <span class="clabel">강아지</span>
+    </div>
+    <div class="char-btn" data-char="quokka" onclick="selectChar(this)">
+      <span class="star">⭐</span>
+      <span class="emoji">🦘</span>
+      <span class="clabel">쿼카</span>
+    </div>
+  </div>
+
+  <div class="char-display-wrap">
+    <span id="charBig">❓</span>
+    <span id="charName">캐릭터를 골라봐요!</span>
+  </div>
+
+  <div class="divider" style="margin:24px 0;">
+    <span class="dp"></span><span class="dc"></span><span class="dy"></span>
+    <span class="dg"></span><span class="dy"></span><span class="dc"></span><span class="dp"></span>
+  </div>
+
+  <div class="effect-wrap">
+    <p class="slabel" style="color:var(--pink);text-shadow:0 0 8px var(--pink);">🎛️ 목소리 이펙트</p>
+    <div class="effect-row">
+      <button class="eff-btn on" data-effect="helium" onclick="selectEffect(this)">
+        <span class="eico">🎈</span>
+        <span>헬륨 가스</span>
+        <span class="edesc">빠르고 높은 목소리</span>
+      </button>
+      <button class="eff-btn" data-effect="child" onclick="selectEffect(this)">
+        <span class="eico">👦</span>
+        <span>어린이</span>
+        <span class="edesc">귀엽고 맑은 목소리</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="walkie-wrap">
+    <div class="walkie">
+      <div class="antenna"></div>
+      <div class="wbody">
+        <div class="side-btn"></div>
+        <div class="wscreen">
+          <div class="sline big" id="screenStatus">STANDBY...</div>
+          <div class="waveform" id="waveform">
+            <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+            <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+          </div>
+          <div class="sline" id="screenChar">---</div>
+        </div>
+        <div class="grill">
+          <div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div>
+          <div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div>
+          <div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div>
+          <div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div>
+          <div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div>
+          <div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div>
+          <div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div>
+          <div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div><div class="gdot"></div>
+        </div>
+        <div class="knobs">
+          <div class="knob-wrap">
+            <div class="knob" id="knob1" onclick="rotateKnob(this)"></div>
+            <div class="klabel">VOL</div>
+          </div>
+          <div class="knob-wrap">
+            <div class="led" id="led"></div>
+            <div class="klabel">REC</div>
+          </div>
+          <div class="knob-wrap">
+            <div class="knob" id="knob2" onclick="rotateKnob(this)"></div>
+            <div class="klabel">CH</div>
+          </div>
+        </div>
+        <button class="ptt" id="pttBtn"
+          onmousedown="startRec()" onmouseup="stopRec()"
+          ontouchstart="startRec(event)" ontouchend="stopRec(event)">
+          <span class="pico">🎙️</span>
+          <span>PTT</span>
+        </button>
+        <div class="timer" id="timer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rec-section">
+    <p class="slabel">▶ 메세지함 ◀</p>
+    <div class="rec-list" id="recList">
+      <div class="norec" id="norec">아직 녹음된 메세지가 없어요<br>PTT 버튼을 꾹 눌러보세요!</div>
+    </div>
+  </div>
+
+  <div class="footer"><p>PIXEL WALKIE TALKIE © 2025 ★ MADE WITH ♥</p></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var selectedChar = null;
+var selectedEffect = 'helium';
+var isRecording = false;
+var mediaRecorder = null;
+var audioChunks = [];
+var recTimer = null;
+var elapsed = 0;
+var recordings = [];
+var knobAngles = { knob1: 45, knob2: 45 };
+var currentAudio = null;
+
+var chars = {
+  cat:    { emoji:'🐱', name:'고양이', label:'CAT'    },
+  dog:    { emoji:'🐶', name:'강아지', label:'DOG'    },
+  quokka: { emoji:'🦘', name:'쿼카',   label:'QUOKKA' }
+};
+
+function selectChar(el) {
+  document.querySelectorAll('.char-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedChar = el.dataset.char;
+  var c = chars[selectedChar];
+  document.getElementById('charBig').textContent = c.emoji;
+  document.getElementById('charName').textContent = c.name;
+  document.getElementById('screenChar').textContent = c.label;
+  showToast(c.name + ' 선택됨!');
+}
+
+function selectEffect(el) {
+  document.querySelectorAll('.eff-btn').forEach(function(b){ b.classList.remove('on'); });
+  el.classList.add('on');
+  selectedEffect = el.dataset.effect;
+  showToast(selectedEffect === 'helium' ? '🎈 헬륨 가스 선택!' : '👦 어린이 목소리 선택!');
+}
+
+function rotateKnob(el) {
+  knobAngles[el.id] = (knobAngles[el.id] + 30) % 360;
+  el.style.transform = 'rotate(' + knobAngles[el.id] + 'deg)';
+}
+
+function startRec(e) {
+  if (e) e.preventDefault();
+  if (isRecording) return;
+  if (!selectedChar) { showToast('먼저 캐릭터를 선택해주세요!'); return; }
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function(stream) {
+      isRecording = true;
+      audioChunks = [];
+
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = function(ev) {
+        if (ev.data && ev.data.size > 0) audioChunks.push(ev.data);
+      };
+      mediaRecorder.start(100);
+
+      document.getElementById('pttBtn').classList.add('rec');
+      document.getElementById('led').classList.add('on');
+      document.getElementById('screenStatus').textContent = '● REC...';
+      document.getElementById('screenStatus').classList.add('blink');
+      document.querySelectorAll('.wbar').forEach(function(b){ b.classList.add('active'); });
+
+      elapsed = 0;
+      document.getElementById('timer').textContent = '00:00';
+      recTimer = setInterval(function() {
+        elapsed++;
+        var m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        var s = String(elapsed % 60).padStart(2, '0');
+        document.getElementById('timer').textContent = m + ':' + s;
+        if (elapsed >= 30) stopRec();
+      }, 1000);
+    })
+    .catch(function(err) {
+      console.error(err);
+      showToast('마이크 권한을 허용해주세요!');
+    });
+}
+
+function stopRec(e) {
+  if (e) e.preventDefault();
+  if (!isRecording || !mediaRecorder) return;
+  isRecording = false;
+  clearInterval(recTimer);
+
+  mediaRecorder.onstop = function() {
+    var raw = new Blob(audioChunks, { type: 'audio/webm' });
+    applyEffect(raw)
+      .then(function(processed) { addRec(processed); })
+      .catch(function(err) {
+        console.warn('이펙트 처리 실패, 원본 저장:', err);
+        addRec(raw);
+      });
+    mediaRecorder.stream.getTracks().forEach(function(t){ t.stop(); });
+  };
+  mediaRecorder.stop();
+
+  document.getElementById('pttBtn').classList.remove('rec');
+  document.getElementById('led').classList.remove('on');
+  document.getElementById('screenStatus').textContent = 'SAVED!';
+  document.getElementById('screenStatus').classList.remove('blink');
+  document.querySelectorAll('.wbar').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('timer').textContent = '';
+  setTimeout(function() {
+    document.getElementById('screenStatus').textContent = 'STANDBY...';
+  }, 2000);
+}
+
+function applyEffect(blob) {
+  var audioCtx = new AudioContext();
+  return blob.arrayBuffer()
+    .then(function(ab) { return audioCtx.decodeAudioData(ab); })
+    .then(function(audioBuf) {
+      var rate = selectedEffect === 'helium' ? 1.85 : 1.45;
+      var outLen = Math.ceil(audioBuf.length / rate);
+      var offCtx = new OfflineAudioContext(audioBuf.numberOfChannels, outLen, audioBuf.sampleRate);
+      var src = offCtx.createBufferSource();
+      src.buffer = audioBuf;
+      src.playbackRate.value = rate;
+      if (selectedEffect === 'child') {
+        var hp = offCtx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 180;
+        var lp = offCtx.createBiquadFilter();
+        lp.type = 'lowpass'; lp.frequency.value = 6000;
+        src.connect(hp); hp.connect(lp); lp.connect(offCtx.destination);
+      } else {
+        src.connect(offCtx.destination);
+      }
+      src.start(0);
+      return offCtx.startRendering();
+    })
+    .then(function(rendered) { return bufToWav(rendered); });
+}
+
+function bufToWav(buf) {
+  var ch = buf.numberOfChannels;
+  var sr = buf.sampleRate;
+  var len = buf.length * ch * 2;
+  var ab = new ArrayBuffer(44 + len);
+  var v = new DataView(ab);
+  function ws(off, s) { for (var i=0;i<s.length;i++) v.setUint8(off+i, s.charCodeAt(i)); }
+  ws(0,'RIFF'); v.setUint32(4,36+len,true); ws(8,'WAVE'); ws(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,ch,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*ch*2,true);
+  v.setUint16(32,ch*2,true); v.setUint16(34,16,true); ws(36,'data');
+  v.setUint32(40,len,true);
+  var off = 44;
+  for (var i=0;i<buf.length;i++) {
+    for (var c=0;c<ch;c++) {
+      var smp = Math.max(-1, Math.min(1, buf.getChannelData(c)[i]));
+      v.setInt16(off, smp < 0 ? smp * 0x8000 : smp * 0x7FFF, true);
+      off += 2;
+    }
+  }
+  return new Blob([ab], { type:'audio/wav' });
+}
+
+function addRec(blob) {
+  var url = URL.createObjectURL(blob);
+  var id = Date.now();
+  var c = chars[selectedChar];
+  var eff = selectedEffect === 'helium' ? '🎈 헬륨' : '👦 어린이';
+  var now = new Date();
+  var t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  var dur = elapsed;
+
+  recordings.unshift({ id: id, url: url });
+  document.getElementById('norec').style.display = 'none';
+
+  var item = document.createElement('div');
+  item.className = 'rec-item';
+  item.id = 'r' + id;
+  item.innerHTML =
+    '<span class="rec-char">' + c.emoji + '</span>' +
+    '<div class="rec-info">' +
+      '<div class="rec-title">' + c.name + '의 메세지</div>' +
+      '<div class="rec-meta">' + eff + ' | ' + t + ' | ' + dur + '초</div>' +
+    '</div>' +
+    '<button class="pbtn" onclick="playRec(\'' + url + '\',this)">▶</button>' +
+    '<button class="dbtn" onclick="delRec(' + id + ')">✕</button>';
+
+  var list = document.getElementById('recList');
+  list.insertBefore(item, list.firstChild);
+  showToast('메세지 저장됨! ✅');
+}
+
+function playRec(url, btn) {
+  if (currentAudio) {
+    currentAudio.pause();
+    document.querySelectorAll('.pbtn').forEach(function(b){ b.textContent = '▶'; });
+  }
+  if (btn.textContent === '⏹') { currentAudio = null; return; }
+  currentAudio = new Audio(url);
+  currentAudio.play();
+  btn.textContent = '⏹';
+  currentAudio.onended = function() { btn.textContent = '▶'; currentAudio = null; };
+}
+
+function delRec(id) {
+  var el = document.getElementById('r' + id);
+  el.style.transition = 'all .3s';
+  el.style.opacity = '0';
+  el.style.transform = 'translateX(20px)';
+  setTimeout(function() {
+    el.remove();
+    recordings = recordings.filter(function(r){ return r.id !== id; });
+    if (recordings.length === 0) document.getElementById('norec').style.display = 'block';
+  }, 300);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+</script>
+</body>
+</html>
