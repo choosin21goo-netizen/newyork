@@ -211,11 +211,16 @@ function loadRecordings() {
     body: JSON.stringify({
       limit: 100,
       offset: 0,
+      prefix: '',
       sortBy: { column: 'created_at', order: 'desc' }
     })
   })
-  .then(function(r){ return r.json(); })
+  .then(function(r){
+    console.log('list status:', r.status);
+    return r.json();
+  })
   .then(function(files) {
+    console.log('list result:', files);
     document.getElementById('loadingMsg').style.display = 'none';
     if (!Array.isArray(files) || files.length === 0) {
       document.getElementById('norec').style.display = 'block';
@@ -226,7 +231,7 @@ function loadRecordings() {
       if (!file.name || file.name === '.emptyFolderPlaceholder') return;
       if (renderedIds[file.name]) return;
       renderedIds[file.name] = true;
-      var url = SB_URL + '/storage/v1/object/public/' + SB_BUCKET + '/' + encodeURIComponent(file.name);
+      var url = SB_URL + '/storage/v1/object/public/' + SB_BUCKET + '/' + file.name;
       var parts = file.name.replace('.wav','').split('_');
       var rec = {
         id:     file.name,
